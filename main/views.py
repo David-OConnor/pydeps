@@ -102,7 +102,7 @@ def cache_dep(name: str, version: str) -> None:
         if created:
             dep.save()
 
-    # cleanup_downloaded()
+    cleanup_downloaded()
 
 
 # Create your views here.
