@@ -1,0 +1,5 @@
+django>=2.2
+djangorestframework
+requests
+dj-database-url
+psycopg2>=2.8.3

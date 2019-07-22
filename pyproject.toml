@@ -1,0 +1,15 @@
+[tool.pypackage]
+name = "Python Dependecy Database"
+py_version = "3.7"
+version = "0.0.1"
+description = "A database of dependencies for each on Pypi"
+author = "David O'Connor"
+
+
+[tool.pypackage.dependencies]
+django = "^2.2.3"
+requests = "^2.22.0"
+djangorestframework = "^3.10.1"
+black = "^19.3.0"
+dj-database-url = "^0.5.0"
+psycopg2 = "^2.8.3"
