@@ -113,7 +113,7 @@ def get_data(request: Request, name: str, version: str):
         dep = Dependency.objects.get(name=name, version=version)
     except Dependency.DoesNotExist:
         print("CAN't FIND IT", name)
-    cache_dep(name, version)
+        cache_dep(name, version)
 
     reqs = Requirement.objects.filter(
         dependency__name=name, dependency__version=version
