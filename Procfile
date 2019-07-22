@@ -1,1 +1,1 @@
-web: gunicorn schedule.wsgi --log-file -
+web: gunicorn pydeps.wsgi --log-file -

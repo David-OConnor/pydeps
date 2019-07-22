@@ -1,6 +1,6 @@
 django>=2.2
-djangorestframework
+djangorestframework>=3.10.1
 gunicorn>=19.7.1
-requests
-dj-database-url
+requests>=2.22.0
+dj-database-url>=0.4.2
 psycopg2>=2.8.3
