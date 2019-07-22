@@ -1,5 +1,6 @@
 django>=2.2
 djangorestframework
+gunicorn>=19.7.1
 requests
 dj-database-url
 psycopg2>=2.8.3

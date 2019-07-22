@@ -8,25 +8,47 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Dependency',
+            name="Dependency",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=100)),
-                ('version', models.CharField(max_length=30)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=100)),
+                ("version", models.CharField(max_length=30)),
             ],
         ),
         migrations.CreateModel(
-            name='Requirement',
+            name="Requirement",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=100)),
-                ('versions', models.CharField(max_length=500)),
-                ('dependency', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='requirements', to='main.Dependency')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=100)),
+                ("versions", models.CharField(max_length=500)),
+                (
+                    "dependency",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="requirements",
+                        to="main.Dependency",
+                    ),
+                ),
             ],
         ),
     ]

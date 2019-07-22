@@ -30,5 +30,7 @@ router = routers.DefaultRouter()
 # router.register(r'groups', views.GroupViewSet)
 
 
-urlpatterns = [path("admin/", admin.site.urls),
-               path("", include(router.urls))]
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path("<str:name>/<str:version>/", views.get_data),
+]
