@@ -1,1 +1,1 @@
-web: gunicorn pydeps.wsgi --log-file -
+web: gunicorn pydeps.wsgi

@@ -51,10 +51,10 @@ def reqs_from_installed(dep: Dependency) -> Optional[List[Requirement]]:
         ) as f:
             for line in f.readlines():
                 # Ignore bits after semicolon. (?)
-                m = re.match(r"^Requires-Dist:\s+(.*?)(?:\s+\((.*?)\))?;.*$", line)
+                m = re.match(r"^Requires-Dist:\s+(.*?)(?:\s+\((.*?)\))?(?:;.*)?$", line)
                 if m:
                     req_name, req_v = m.groups()
-                    print(m.groups(), "GRPS")
+
                     if req_v is None:  # ie not specified / any version allowed
                         req_v = ""
                     result.append(

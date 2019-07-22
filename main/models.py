@@ -24,4 +24,4 @@ class Requirement(models.Model):
         return f'{self.name}: "{self.versions}" required by {self.dependency.name}="{self.dependency.version}"'
 
     class Meta:
-        unique_together = ("name", "versions", "dependency")
+        unique_together = ("name", "dependency")
