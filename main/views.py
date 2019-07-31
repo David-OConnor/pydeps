@@ -26,7 +26,9 @@ from .models import Dependency, Requirement
 class DepSerializer(serializers.ModelSerializer):
     class Meta:
         model = Dependency
-        fields = ("name", "version", "requires_python", "requires_dist")
+        # name isn't required, since we return these as a list of versions
+        # for the same name.
+        fields = ("version", "requires_python", "requires_dist")
         depth = 1
 
 
