@@ -5,13 +5,10 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('main', '0003_auto_20190722_1739'),
-    ]
+    dependencies = [("main", "0003_auto_20190722_1739")]
 
     operations = [
         migrations.AlterUniqueTogether(
-            name='requirement',
-            unique_together={('name', 'dependency')},
-        ),
+            name="requirement", unique_together={("name", "dependency")}
+        )
     ]

@@ -1,29 +1,33 @@
 from typing import List, Optional
 
+import requests
+
 from rest_framework.decorators import api_view
 from rest_framework.request import Request
 from rest_framework.response import Response
-from rest_framework import viewsets, generics, serializers
+from rest_framework import serializers
 
 from pathlib import Path
 from shutil import rmtree
 
-from dataclasses import dataclass
-from enum import Enum
+# from dataclasses import dataclass
+# from enum import Enum
 
-import os, subprocess
+import os  # , subprocess
 
 import re
 
-# import requests
-
 from .models import Dependency, Requirement
+
+# We keep versions as strings in this package for consistency with the database, file reads,
+# and rest endpoints.
 
 
 class DepSerializer(serializers.ModelSerializer):
     class Meta:
         model = Dependency
-        fields = ("name", "version", "requirements")
+        fields = ("name", "version", "requires_python", "requires_dist")
+        depth = 1
 
 
 class ReqSerializer(serializers.ModelSerializer):
@@ -105,14 +109,12 @@ def cache_dep(name: str, version: str) -> None:
     cleanup_downloaded()
 
 
-# Create your views here.
 @api_view(["GET"])
 def get_data(request: Request, name: str, version: str):
-    """"""
+    """Get dependency data for a single version"""
     try:
-        dep = Dependency.objects.get(name=name, version=version)
+        Dependency.objects.get(name=name, version=version)
     except Dependency.DoesNotExist:
-        print("CAN't FIND IT", name)
         cache_dep(name, version)
 
     reqs = Requirement.objects.filter(
@@ -120,3 +122,40 @@ def get_data(request: Request, name: str, version: str):
     )
     req_serializer = ReqSerializer(reqs, many=True)
     return Response({"requirements": req_serializer.data})
+
+
+@api_view(["GET"])
+def get_all(request: Request, name: str):
+    """Get dependency data for all versions of a package. Allows us to pull
+    requirements for all versions of a package with one API hit - Pypi requires
+    a hit for each version. We collect and cache that. This may take a while when getting
+    for packages with a large number of uncached versions."""
+
+    # Get all versions from the warehouse
+    r = requests.get(f"https://pypi.org/pypi/{name}/json").json()
+    versions = r["releases"].keys()
+
+    result = []
+    for version in versions:
+        try:
+            result.append(Dependency.objects.get(name=name, version=version))
+        except Dependency.DoesNotExist:
+            data = requests.get(f"https://pypi.org/pypi/{name}/{version}/json").json()
+            info = data["info"]
+            dep = Dependency(
+                name=name,
+                version=version,
+                requires_python=info["requires_python"],
+            )
+
+            dep.save()
+            if info["requires_dist"] is not None:
+                for req in info["requires_dist"]:
+                    req2 = Requirement(data=req, dependency=dep)
+                    req2.save()
+
+            print(f"Cached {name} = \"{version}\" ")
+            result.append(dep)
+
+    dep_serializer = DepSerializer(result, many=True)
+    return Response(dep_serializer.data)

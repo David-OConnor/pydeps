@@ -32,5 +32,6 @@ router = routers.DefaultRouter()
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("<str:name>/", views.get_all),
     path("<str:name>/<str:version>/", views.get_data),
 ]
