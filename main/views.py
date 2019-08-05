@@ -1,6 +1,7 @@
 from typing import List, Optional
 
 import requests
+from django.db import IntegrityError
 
 from rest_framework.decorators import api_view
 from rest_framework.request import Request
@@ -154,7 +155,10 @@ def get_all(request: Request, name: str):
             if info["requires_dist"] is not None:
                 for req in info["requires_dist"]:
                     req2 = Requirement(data=req, dependency=dep)
-                    req2.save()
+                    try:
+                        req2.save()
+                    except IntegrityError:
+                        continue
 
             print(f"Cached {name} = \"{version}\" ")
             result.append(dep)
