@@ -10,6 +10,7 @@ class Dependency(models.Model):
     name = models.CharField(max_length=100)
     version = models.CharField(max_length=100)  # Includes version info
     requires_python = models.CharField(max_length=200, blank=True, null=True)
+    reqs_complete = models.BooleanField(default=False)
 
     # filename = models.CharField(max_length=100)
     # hash = models.CharField(max_length=300)
@@ -25,6 +26,9 @@ class Dependency(models.Model):
 
     def __repr__(self):
         return f'{self.name}: "{self.version}"'
+
+    def __str__(self):
+        return self.__repr__()
 
     class Meta:
         unique_together = ("name", "version")

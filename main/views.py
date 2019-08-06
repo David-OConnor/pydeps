@@ -109,6 +109,8 @@ def cache_dep(name: str, version: str) -> None:
         if created:
             dep.save()
 
+    dep.reqs_complete = True
+    dep.save()
     cleanup_downloaded()
 
 
@@ -141,7 +143,12 @@ def get_all(request: Request, name: str):
     result = []
     for version in versions:
         try:
-            result.append(Dependency.objects.get(name=name, version=version))
+            dep = Dependency.objects.get(name=name, version=version)
+            if not dep.reqs_complete:
+                # Possible interruption between saving the dep, and adding the reqs.
+                print(f"Reqs not complete for {name}, {version}. Downloading and checking manually.")
+                cache_dep(name, version)
+            result.append(dep)
         except Dependency.DoesNotExist:
             data = requests.get(f"https://pypi.org/pypi/{name}/{version}/json").json()
             info = data["info"]
@@ -151,15 +158,30 @@ def get_all(request: Request, name: str):
                 requires_python=info["requires_python"],
             )
 
-            dep.save()
-            if info["requires_dist"] is not None:
+            try:
+                dep.save()
+            except IntegrityError:
+                # Possibly a conflict between multiple requests. If this happens,
+                # make sure we pull req info again. (?)
+                print("Integrity error; trying to get dep again.")
+                dep = Dependency.objects.get(name=name, version=version)
+
+            if info["requires_dist"] is None:
+                # This may mean there are no dependencies, or Pypi is unable to properly
+                # find them. Unfortunately, there's currently no way to tell the difference.
+                # todo: Even if not none, we may not be able to trust Pypi.
+                # todo: Perhaps always determine ourselves?
+                print(f"Deps is empty on pypi warehouse for {name}, {version}. Downloading and checking manually.")
+                cache_dep(name, version)
+            else:
                 for req in info["requires_dist"]:
                     req2 = Requirement(data=req, dependency=dep)
                     try:
                         req2.save()
                     except IntegrityError:
                         continue
-
+            dep.reqs_complete = True
+            dep.save()
             print(f"Cached {name} = \"{version}\" ")
             result.append(dep)
 
