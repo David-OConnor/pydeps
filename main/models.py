@@ -48,9 +48,12 @@ class Requirement(models.Model):
     # def from_str(self, dependency: Dependency) -> Requirement:
     #     return Requirement(name=name, versions=versions)
 
+    def __repr__(self):
+        return f'{self.data}, required by {self.dependency.name}="{self.dependency.version}"'
 
-    # def __repr__(self):
-    #     return f'{self.name}: "{self.versions}" required by {self.dependency.name}="{self.dependency.version}"'
+    def __str__(self):
+        return self.__repr__()
+
 
     class Meta:
         unique_together = ("data", "dependency")

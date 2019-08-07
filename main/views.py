@@ -39,17 +39,9 @@ class ReqSerializer(serializers.ModelSerializer):
         fields = ("name", "versions")
 
 
-# class VersionType(Enum):
-#     EXACT = 1
-#     GTE = 2
-#     LTE = 3
-#     NE = 4
-
-
 def reqs_from_installed(dep: Dependency) -> Optional[List[Requirement]]:
     """Check for dist-info and egg-info, and delegate to the appropriate
     sub function to find dependency info."""
-
     result = []
 
     try:
@@ -58,19 +50,17 @@ def reqs_from_installed(dep: Dependency) -> Optional[List[Requirement]]:
         ) as f:
             for line in f.readlines():
                 # Ignore bits after semicolon. (?)
-                m = re.match(r"^Requires-Dist:\s+(.*?)(?:\s+\((.*?)\))?(?:;.*)?$", line)
+                m = re.match(r"^Requires-Dist:\s*(.*)$", line)
                 if m:
-                    req_name, req_v = m.groups()
+                    data = m.groups()[0]
 
-                    if req_v is None:  # ie not specified / any version allowed
-                        req_v = ""
                     result.append(
-                        Requirement(name=req_name, versions=req_v, dependency=dep)
+                        Requirement(data=data, dependency=dep)
                     )
     except FileNotFoundError:
-        return None  # This *may* mean the dependency cannot be found / doesn't exist.
+        print(f"Can't find dist-info for {dep.name}-{dep.version}")
+        return []  # This *may* mean the dependency cannot be found / doesn't exist.
 
-    # # is requires.txt/egg-info legacy?
     # with open(f"deps_to_query/{name}-{version}.egg-info/requires.txt") as f:
     #     for line in f.readlines():
     #         result.append(Requirement.from_str(line))
@@ -90,7 +80,7 @@ def cleanup_downloaded() -> None:
 def install_with_pip(dep: Dependency) -> None:
     # Version is exact.
     name_with_version = f"{dep.name}=={dep.version}"
-    os.system(f"python -m pip install {name_with_version} --target deps_to_query")
+    os.system(f"python3 -m pip install {name_with_version} --target deps_to_query")
 
 
 def cache_dep(name: str, version: str) -> None:
@@ -101,17 +91,21 @@ def cache_dep(name: str, version: str) -> None:
     install_with_pip(dep)
 
     reqs = reqs_from_installed(dep)
-    if reqs is not None:
-        for req in reqs:
+    # if reqs is not None:
+    for req in reqs:
+        try:
             req.save()
+        except IntegrityError:
+            continue
 
-        # Don't save the dep unless also saving its associated reqs.
-        if created:
-            dep.save()
+    # Don't save the dep unless also saving its associated reqs.
+    if created:
+        dep.save()
 
-    dep.reqs_complete = True
-    dep.save()
-    cleanup_downloaded()
+    if not dep.reqs_complete:
+        dep.reqs_complete = True
+        dep.save()
+    # cleanup_downloaded()
 
 
 @api_view(["GET"])
