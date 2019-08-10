@@ -5,37 +5,23 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('main', '0005_auto_20190731_0330'),
-    ]
+    dependencies = [("main", "0005_auto_20190731_0330")]
 
     operations = [
-        migrations.RemoveField(
-            model_name='dependency',
-            name='file_url',
-        ),
-        migrations.RemoveField(
-            model_name='dependency',
-            name='filename',
-        ),
-        migrations.RemoveField(
-            model_name='dependency',
-            name='hash',
-        ),
-        migrations.RemoveField(
-            model_name='dependency',
-            name='version_reqs',
-        ),
+        migrations.RemoveField(model_name="dependency", name="file_url"),
+        migrations.RemoveField(model_name="dependency", name="filename"),
+        migrations.RemoveField(model_name="dependency", name="hash"),
+        migrations.RemoveField(model_name="dependency", name="version_reqs"),
         migrations.AddField(
-            model_name='dependency',
-            name='requires_dist',
-            field=models.CharField(default='', max_length=500),
+            model_name="dependency",
+            name="requires_dist",
+            field=models.CharField(default="", max_length=500),
             preserve_default=False,
         ),
         migrations.AddField(
-            model_name='dependency',
-            name='requires_python',
-            field=models.CharField(default='', max_length=200),
+            model_name="dependency",
+            name="requires_python",
+            field=models.CharField(default="", max_length=200),
             preserve_default=False,
         ),
     ]

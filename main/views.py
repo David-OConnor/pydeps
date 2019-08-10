@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+from functools import total_ordering
 from typing import List, Optional
 
 import requests
@@ -22,6 +24,52 @@ from .models import Dependency, Requirement
 
 # We keep versions as strings in this package for consistency with the database, file reads,
 # and rest endpoints.
+
+
+@dataclass
+@total_ordering
+class Version:
+    major: int
+    minor: int
+    patch: int
+
+    def __eq__(self: "Version", other: "Version") -> bool:
+        return (
+            self.major == other.major
+            and self.minor == other.minor
+            and self.patch == other.patch
+        )
+
+    def __gt__(self: "Version", other: "Version") -> bool:
+        if self.major != other.major:
+            return self.major > other.major
+        if self.minor != other.minor:
+            return self.minor > other.minor
+        if self.patch != other.patch:
+            return self.patch > other.patch
+        return False
+
+    @classmethod
+    def from_str(cls: "Version", s: str) -> "Version":
+        maj_only = re.match(r"^(\d{1,9})\.?$", s)
+        maj_minor = re.match(r"^(\d{1,9})\.(\d{1,9})\.?$", s)
+        maj_minor_patch = re.match(r"^(\d{1,9})\.(\d{1,9})\.(\d{1,9})\.?$", s)
+
+        if maj_minor_patch:
+            major, minor, patch = maj_minor_patch.groups()
+            return cls(int(major), int(minor), int(patch))
+        if maj_minor:
+            major, minor = maj_minor.groups()
+            return cls(int(major), int(minor), 0)
+        if maj_only:
+            major = maj_only.group()
+            return cls(int(major), 0, 0)
+
+        # raise ValueError(f"Unable to parse Version from {s}")
+        return cls(0, 0, 0)  # eg weird chars in vers
+
+    def __str__(self) -> str:
+        return f"{self.major}.{self.minor}.{self.patch}"
 
 
 class DepSerializer(serializers.ModelSerializer):
@@ -54,9 +102,7 @@ def reqs_from_installed(dep: Dependency) -> Optional[List[Requirement]]:
                 if m:
                     data = m.groups()[0]
 
-                    result.append(
-                        Requirement(data=data, dependency=dep)
-                    )
+                    result.append(Requirement(data=data, dependency=dep))
     except FileNotFoundError:
         print(f"Can't find dist-info for {dep.name}-{dep.version}")
         return []  # This *may* mean the dependency cannot be found / doesn't exist.
@@ -108,6 +154,69 @@ def cache_dep(name: str, version: str) -> None:
     # cleanup_downloaded()
 
 
+def process_reqs(name: str, versions: List[str]) -> List[Dependency]:
+    """Helper function to reduce repetition"""
+    result_ = []
+    for version in versions:
+        try:
+            dep = Dependency.objects.get(name=name, version=version)
+            if not dep.reqs_complete:
+                # Possible interruption between saving the dep, and adding the reqs.
+                print(
+                    f"Reqs not complete for {name}, {version}. Downloading and checking manually."
+                )
+                cache_dep(name, version)
+                result_.append(dep)
+        except Dependency.DoesNotExist:
+            data = requests.get(f"https://pypi.org/pypi/{name}/{version}/json").json()
+            info = data["info"]
+            dep = Dependency(
+                name=name, version=version, requires_python=info["requires_python"]
+            )
+
+            try:
+                dep.save()
+            except IntegrityError:
+                # Possibly a conflict between multiple requests. If this happens,
+                # make sure we pull req info again. (?)
+                print("Integrity error; trying to get dep again.")
+                dep = Dependency.objects.get(name=name, version=version)
+
+            if info["requires_dist"] is None:
+                # This may mean there are no dependencies, or Pypi is unable to properly
+                # find them. Unfortunately, there's currently no way to tell the difference.
+                # todo: Even if not none, we may not be able to trust Pypi.
+                # todo: Perhaps always determine ourselves?
+                print(
+                    f"Deps is empty on pypi warehouse for {name}, {version}. Downloading and checking manually."
+                )
+                cache_dep(name, version)
+            else:
+                for req in info["requires_dist"]:
+                    req2 = Requirement(data=req, dependency=dep)
+                    try:
+                        req2.save()
+                    except IntegrityError:
+                        continue
+            dep.reqs_complete = True
+            dep.save()
+            print(f'Cached {name} = "{version}" ')
+        result_.append(dep)
+    return result_
+
+
+def get_helper(name: str, version: Optional[str]):
+    r = requests.get(f"https://pypi.org/pypi/{name}/json").json()
+    if version:
+        vers = Version.from_str(version)
+        versions = [str(v) for v in r["releases"].keys() if Version.from_str(v) >= vers]
+    else:  # ie all versions
+        versions = r["releases"].keys()
+
+    dep_serializer = DepSerializer(process_reqs(name, versions), many=True)
+    return Response(dep_serializer.data)
+
+
 @api_view(["GET"])
 def get_data(request: Request, name: str, version: str):
     """Get dependency data for a single version"""
@@ -129,55 +238,11 @@ def get_all(request: Request, name: str):
     requirements for all versions of a package with one API hit - Pypi requires
     a hit for each version. We collect and cache that. This may take a while when getting
     for packages with a large number of uncached versions."""
+    return get_helper(name, None)
 
-    # Get all versions from the warehouse
-    r = requests.get(f"https://pypi.org/pypi/{name}/json").json()
-    versions = r["releases"].keys()
 
-    result = []
-    for version in versions:
-        try:
-            dep = Dependency.objects.get(name=name, version=version)
-            if not dep.reqs_complete:
-                # Possible interruption between saving the dep, and adding the reqs.
-                print(f"Reqs not complete for {name}, {version}. Downloading and checking manually.")
-                cache_dep(name, version)
-            result.append(dep)
-        except Dependency.DoesNotExist:
-            data = requests.get(f"https://pypi.org/pypi/{name}/{version}/json").json()
-            info = data["info"]
-            dep = Dependency(
-                name=name,
-                version=version,
-                requires_python=info["requires_python"],
-            )
-
-            try:
-                dep.save()
-            except IntegrityError:
-                # Possibly a conflict between multiple requests. If this happens,
-                # make sure we pull req info again. (?)
-                print("Integrity error; trying to get dep again.")
-                dep = Dependency.objects.get(name=name, version=version)
-
-            if info["requires_dist"] is None:
-                # This may mean there are no dependencies, or Pypi is unable to properly
-                # find them. Unfortunately, there's currently no way to tell the difference.
-                # todo: Even if not none, we may not be able to trust Pypi.
-                # todo: Perhaps always determine ourselves?
-                print(f"Deps is empty on pypi warehouse for {name}, {version}. Downloading and checking manually.")
-                cache_dep(name, version)
-            else:
-                for req in info["requires_dist"]:
-                    req2 = Requirement(data=req, dependency=dep)
-                    try:
-                        req2.save()
-                    except IntegrityError:
-                        continue
-            dep.reqs_complete = True
-            dep.save()
-            print(f"Cached {name} = \"{version}\" ")
-            result.append(dep)
-
-    dep_serializer = DepSerializer(result, many=True)
-    return Response(dep_serializer.data)
+@api_view(["GET"])
+def get_gte(request: Request, name: str, version: str):
+    """Similar to get_all, but only get reqs greater greater than a specific version.
+    Has faster catching than get_all."""
+    return get_helper(name, version)

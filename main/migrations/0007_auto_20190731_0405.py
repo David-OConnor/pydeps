@@ -5,14 +5,12 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('main', '0006_auto_20190731_0401'),
-    ]
+    dependencies = [("main", "0006_auto_20190731_0401")]
 
     operations = [
         migrations.AlterField(
-            model_name='dependency',
-            name='requires_dist',
+            model_name="dependency",
+            name="requires_dist",
             field=models.CharField(blank=True, max_length=500, null=True),
-        ),
+        )
     ]

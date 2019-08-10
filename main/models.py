@@ -54,6 +54,5 @@ class Requirement(models.Model):
     def __str__(self):
         return self.__repr__()
 
-
     class Meta:
         unique_together = ("data", "dependency")

@@ -5,22 +5,14 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('main', '0009_remove_dependency_requires_dist'),
-    ]
+    dependencies = [("main", "0009_remove_dependency_requires_dist")]
 
     operations = [
         migrations.RenameField(
-            model_name='requirement',
-            old_name='versions',
-            new_name='data',
+            model_name="requirement", old_name="versions", new_name="data"
         ),
         migrations.AlterUniqueTogether(
-            name='requirement',
-            unique_together={('data', 'dependency')},
+            name="requirement", unique_together={("data", "dependency")}
         ),
-        migrations.RemoveField(
-            model_name='requirement',
-            name='name',
-        ),
+        migrations.RemoveField(model_name="requirement", name="name"),
     ]
