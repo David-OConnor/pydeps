@@ -233,18 +233,20 @@ def get_helper(name: str, version: Optional[str]):
 @api_view(["GET"])
 def get_one(request: Request, name: str, version: str):
     """Get dependency data for a single version"""
+    # todo: Dry in this fn
     try:
         dep = Dependency.objects.get(name=name, version=version)
         if not dep.reqs_complete:
             cache_dep(name, version)
     except Dependency.DoesNotExist:
         cache_dep(name, version)
+        dep = Dependency.objects.get(name=name, version=version)
 
-    reqs = Requirement.objects.filter(
-        dependency__name=name, dependency__version=version
-    )
-    req_serializer = ReqSerializer(reqs, many=True)
-    return Response({"requirements": req_serializer.data})
+    dep_serializer = DepSerializer(dep)
+    return Response(dep_serializer.data)
+
+    # todo: Error if can't find the dependency?? Currently
+    # todo returns a (possibly-empty) list of reqs.
 
 
 @api_view(["GET"])
