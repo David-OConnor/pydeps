@@ -167,10 +167,11 @@ def cache_dep(name: str, version: str) -> None:
     cleanup_downloaded()
 
 
-def process_reqs(name: str, versions: List[str]) -> List[Dependency]:
+def process_reqs(name: str, versions: List[Version]) -> List[Dependency]:
     """Helper function to reduce repetition"""
     result_ = []
     for version in versions:
+        version = str(version)
         try:
             dep = Dependency.objects.get(name=name, version=version)
             if not dep.reqs_complete:
@@ -218,13 +219,15 @@ def process_reqs(name: str, versions: List[str]) -> List[Dependency]:
     return result_
 
 
-def get_helper(name: str, version: Optional[str]):
+def get_helper(name: str, min_vers: Optional[Version], max_vers: Optional[Version]):
     r = requests.get(f"https://pypi.org/pypi/{name}/json").json()
-    if version:
-        vers = Version.from_str(version)
-        versions = [str(v) for v in r["releases"].keys() if Version.from_str(v) >= vers]
-    else:  # ie all versions
-        versions = r["releases"].keys()
+
+    versions = [Version.from_str(v) for v in r["releases"].keys()]
+
+    if min_vers:
+        versions = [v for v in versions if v >= min_vers]
+    if max_vers:
+        versions = [v for v in versions if v <= max_vers]
 
     dep_serializer = DepSerializer(process_reqs(name, versions), many=True)
     return Response(dep_serializer.data)
@@ -232,21 +235,8 @@ def get_helper(name: str, version: Optional[str]):
 
 @api_view(["GET"])
 def get_one(request: Request, name: str, version: str):
-    """Get dependency data for a single version"""
-    # todo: Dry in this fn
-    try:
-        dep = Dependency.objects.get(name=name, version=version)
-        if not dep.reqs_complete:
-            cache_dep(name, version)
-    except Dependency.DoesNotExist:
-        cache_dep(name, version)
-        dep = Dependency.objects.get(name=name, version=version)
-
-    dep_serializer = DepSerializer(dep)
-    return Response(dep_serializer.data)
-
-    # todo: Error if can't find the dependency?? Currently
-    # todo returns a (possibly-empty) list of reqs.
+    vers = Version.from_str(version)
+    return get_helper(name, vers, vers)
 
 
 @api_view(["GET"])
@@ -255,11 +245,22 @@ def get_all(request: Request, name: str):
     requirements for all versions of a package with one API hit - Pypi requires
     a hit for each version. We collect and cache that. This may take a while when getting
     for packages with a large number of uncached versions."""
-    return get_helper(name, None)
+    return get_helper(name, None, None)
 
 
 @api_view(["GET"])
 def get_gte(request: Request, name: str, version: str):
     """Similar to get_all, but only get reqs greater greater than a specific version.
     Has faster catching than get_all."""
-    return get_helper(name, version)
+    return get_helper(name, Version.from_str(version), None)
+
+
+@api_view(["GET"])
+def get_lte(request: Request, name: str, version: str):
+    return get_helper(name, None, Version.from_str(version))
+
+
+@api_view(["GET"])
+def get_range(request: Request, name: str, min_vers: str, max_vers: str):
+    return get_helper(name, Version.from_str(min_vers), Version.from_str(max_vers))
+
