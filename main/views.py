@@ -84,28 +84,41 @@ class DepSerializer(serializers.ModelSerializer):
 class ReqSerializer(serializers.ModelSerializer):
     class Meta:
         model = Requirement
-        fields = ("name", "versions")
+        fields = ("data",)
 
 
 def reqs_from_installed(dep: Dependency) -> Optional[List[Requirement]]:
     """Check for dist-info and egg-info, and delegate to the appropriate
     sub function to find dependency info."""
     result = []
-
     try:
         with open(
             f"{str(Path.cwd())}/deps_to_query/{dep.name}-{dep.version}.dist-info/METADATA"
         ) as f:
             for line in f.readlines():
-                # Ignore bits after semicolon. (?)
                 m = re.match(r"^Requires-Dist:\s*(.*)$", line)
                 if m:
                     data = m.groups()[0]
 
                     result.append(Requirement(data=data, dependency=dep))
+
+
     except FileNotFoundError:
-        print(f"Can't find dist-info for {dep.name}-{dep.version}")
-        return []  # This *may* mean the dependency cannot be found / doesn't exist.
+        # todo DRY!
+        # Try again, but capitalized
+        try:
+            with open(
+                    f"{str(Path.cwd())}/deps_to_query/{dep.name.capitalize()}-{dep.version}.dist-info/METADATA"
+            ) as f:
+                for line in f.readlines():
+                    m = re.match(r"^Requires-Dist:\s*(.*)$", line)
+                    if m:
+                        data = m.groups()[0]
+
+                        result.append(Requirement(data=data, dependency=dep))
+        except FileNotFoundError:
+            print(f"Can't find dist-info for {dep.name}-{dep.version}")
+            return []  # This *may* mean the dependency cannot be found / doesn't exist.
 
     # with open(f"deps_to_query/{name}-{version}.egg-info/requires.txt") as f:
     #     for line in f.readlines():
@@ -151,7 +164,7 @@ def cache_dep(name: str, version: str) -> None:
     if not dep.reqs_complete:
         dep.reqs_complete = True
         dep.save()
-    # cleanup_downloaded()
+    cleanup_downloaded()
 
 
 def process_reqs(name: str, versions: List[str]) -> List[Dependency]:
@@ -218,10 +231,12 @@ def get_helper(name: str, version: Optional[str]):
 
 
 @api_view(["GET"])
-def get_data(request: Request, name: str, version: str):
+def get_one(request: Request, name: str, version: str):
     """Get dependency data for a single version"""
     try:
-        Dependency.objects.get(name=name, version=version)
+        dep = Dependency.objects.get(name=name, version=version)
+        if not dep.reqs_complete:
+            cache_dep(name, version)
     except Dependency.DoesNotExist:
         cache_dep(name, version)
 
