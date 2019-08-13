@@ -50,7 +50,7 @@ class Version:
         return False
 
     @classmethod
-    def from_str(cls: "Version", s: str) -> "Version":
+    def from_str(cls: "Version", s: str) -> Optional["Version"]:
         maj_only = re.match(r"^(\d{1,9})\.?$", s)
         maj_minor = re.match(r"^(\d{1,9})\.(\d{1,9})\.?$", s)
         maj_minor_patch = re.match(r"^(\d{1,9})\.(\d{1,9})\.(\d{1,9})\.?$", s)
@@ -66,7 +66,7 @@ class Version:
             return cls(int(major), 0, 0)
 
         # raise ValueError(f"Unable to parse Version from {s}")
-        return cls(0, 0, 0)  # eg weird chars in vers
+        return None
 
     def __str__(self) -> str:
         return f"{self.major}.{self.minor}.{self.patch}"
@@ -182,6 +182,7 @@ def process_reqs(name: str, versions: List[Version]) -> List[Dependency]:
                 cache_dep(name, version)
                 result_.append(dep)
         except Dependency.DoesNotExist:
+
             data = requests.get(f"https://pypi.org/pypi/{name}/{version}/json").json()
             info = data["info"]
             dep = Dependency(
@@ -223,6 +224,7 @@ def get_helper(name: str, min_vers: Optional[Version], max_vers: Optional[Versio
     r = requests.get(f"https://pypi.org/pypi/{name}/json").json()
 
     versions = [Version.from_str(v) for v in r["releases"].keys()]
+    versions = [v for v in versions if v is not None]
 
     if min_vers:
         versions = [v for v in versions if v >= min_vers]
