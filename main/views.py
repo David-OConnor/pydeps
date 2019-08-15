@@ -80,6 +80,14 @@ class DepSerializer(serializers.ModelSerializer):
         fields = ("version", "requires_python", "requires_dist")
         depth = 1
 
+class DepSerializerWName(serializers.ModelSerializer):
+    class Meta:
+        model = Dependency
+        # name isn't required, since we return these as a list of versions
+        # for the same name.
+        fields = ("name", "version", "requires_python", "requires_dist")
+        depth = 1
+
 
 class ReqSerializer(serializers.ModelSerializer):
     class Meta:
@@ -266,3 +274,28 @@ def get_lte(request: Request, name: str, version: str):
 def get_range(request: Request, name: str, min_vers: str, max_vers: str):
     return get_helper(name, Version.from_str(min_vers), Version.from_str(max_vers))
 
+
+@api_view(["POST"])
+def multiple(request: Request):
+    # todo: DRY from get_helper
+    # print(request.data['packages'])  # todo
+
+    result = []
+    for name, rng in request.data["packages"].items():
+        # todo: You're making this version getting call here, and on rust!
+        r = requests.get(f"https://pypi.org/pypi/{name}/json").json()
+        versions = [Version.from_str(v) for v in r["releases"].keys()]
+        versions = [v for v in versions if v is not None]
+
+        min_vers = Version.from_str(rng[0])
+        max_vers = Version.from_str(rng[1])
+
+        if min_vers:
+            versions = [v for v in versions if v >= min_vers]
+        if max_vers:
+            versions = [v for v in versions if v <= max_vers]
+
+        result.extend(process_reqs(name, versions))
+
+    dep_serializer = DepSerializerWName(result, many=True)
+    return Response(dep_serializer.data)

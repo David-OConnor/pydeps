@@ -27,10 +27,12 @@ from main import views
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("multiple/", views.multiple),
     path("<str:name>/<str:version>/", views.get_one),
     path("<str:name>/", views.get_all),
     path("gte/<str:name>/<str:version>/", views.get_gte),
     path("lte/<str:name>/<str:version>/", views.get_lte),
     path("range/<str:name>/<str:min_vers>/<str:max_vers>/", views.get_range),
+
 
 ]
