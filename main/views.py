@@ -281,21 +281,21 @@ def multiple(request: Request):
     # print(request.data['packages'])  # todo
 
     result = []
-    for name, rng in request.data["packages"].items():
-        # todo: You're making this version getting call here, and on rust!
-        r = requests.get(f"https://pypi.org/pypi/{name}/json").json()
-        versions = [Version.from_str(v) for v in r["releases"].keys()]
+    print(request.data["packages"])
+    for name, versions in request.data["packages"].items():
+        versions = [Version.from_str(v) for v in versions]
         versions = [v for v in versions if v is not None]
 
-        min_vers = Version.from_str(rng[0])
-        max_vers = Version.from_str(rng[1])
-
-        if min_vers:
-            versions = [v for v in versions if v >= min_vers]
-        if max_vers:
-            versions = [v for v in versions if v <= max_vers]
+        # min_vers = Version.from_str(rng[0])
+        # max_vers = Version.from_str(rng[1])
+        #
+        # if min_vers:
+        #     versions = [v for v in versions if v >= min_vers]
+        # if max_vers:
+        #     versions = [v for v in versions if v <= max_vers]
 
         result.extend(process_reqs(name, versions))
 
     dep_serializer = DepSerializerWName(result, many=True)
+    print(dep_serializer.data, "DATA")
     return Response(dep_serializer.data)
