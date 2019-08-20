@@ -59,13 +59,13 @@ class Version:
 
         if maj_minor_patch:
             major, minor, patch = maj_minor_patch.groups()
-            return cls(int(major), int(minor), int(patch))
+            return cls(int(major), int(minor), int(patch), "")
         if maj_minor:
             major, minor = maj_minor.groups()
-            return cls(int(major), int(minor), 0)
+            return cls(int(major), int(minor), 0, "")
         if maj_only:
             major = maj_only.group()
-            return cls(int(major), 0, 0)
+            return cls(int(major), 0, 0, "")
 
         # raise ValueError(f"Unable to parse Version from {s}")
         return None
@@ -283,8 +283,6 @@ def get_range(request: Request, name: str, min_vers: str, max_vers: str):
 def multiple(request: Request):
     result = []
 
-    print(request.data["packages"])
-
     for name, versions in request.data["packages"].items():
         # todo: Perhaps put this logic back if you update Version to parse and format
         # todo modifiers (ie 1.2.3.4b3
@@ -293,5 +291,4 @@ def multiple(request: Request):
         result.extend(process_reqs(name, versions))
 
     dep_serializer = DepSerializerWName(result, many=True)
-    print(dep_serializer.data)
     return Response(dep_serializer.data)
