@@ -1,0 +1,7 @@
+chardetect = chardet.cli.chardetect:main
+rq = rq.cli:main
+rqinfo = rq.cli:info
+rqworker = rq.cli:worker
+django-admin = django.core.management:execute_from_command_line
+wheel = wheel.cli:main
+sqlformat = sqlparse.__main__:main

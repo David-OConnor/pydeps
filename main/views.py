@@ -32,6 +32,8 @@ class Version:
     major: int
     minor: int
     patch: int
+    # todo: Need to parse/format modifier if you want to use this .
+    modifier: str  # includes extra nums, and modifiers.
 
     def __eq__(self: "Version", other: "Version") -> bool:
         return (
@@ -175,11 +177,13 @@ def cache_dep(name: str, version: str) -> None:
     cleanup_downloaded()
 
 
-def process_reqs(name: str, versions: List[Version]) -> List[Dependency]:
+# todo: Until version handles modifiers
+# def process_reqs(name: str, versions: List[Version]) -> List[Dependency]:
+def process_reqs(name: str, versions: List[str]) -> List[Dependency]:
     """Helper function to reduce repetition"""
     result_ = []
     for version in versions:
-        version = str(version)
+        # version = str(version) # todo put back once version handles modifiers
         try:
             dep = Dependency.objects.get(name=name, version=version)
             if not dep.reqs_complete:
@@ -277,25 +281,17 @@ def get_range(request: Request, name: str, min_vers: str, max_vers: str):
 
 @api_view(["POST"])
 def multiple(request: Request):
-    # todo: DRY from get_helper
-    # print(request.data['packages'])  # todo
-
     result = []
+
     print(request.data["packages"])
+
     for name, versions in request.data["packages"].items():
-        versions = [Version.from_str(v) for v in versions]
-        versions = [v for v in versions if v is not None]
-
-        # min_vers = Version.from_str(rng[0])
-        # max_vers = Version.from_str(rng[1])
-        #
-        # if min_vers:
-        #     versions = [v for v in versions if v >= min_vers]
-        # if max_vers:
-        #     versions = [v for v in versions if v <= max_vers]
-
+        # todo: Perhaps put this logic back if you update Version to parse and format
+        # todo modifiers (ie 1.2.3.4b3
+        # versions = [Version.from_str(v) for v in versions]
+        # result.extend(process_reqs(name, [v for v in versions if v is not None]))
         result.extend(process_reqs(name, versions))
 
     dep_serializer = DepSerializerWName(result, many=True)
-    print(dep_serializer.data, "DATA")
+    print(dep_serializer.data)
     return Response(dep_serializer.data)
