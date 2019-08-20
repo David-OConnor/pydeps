@@ -3,6 +3,7 @@ build/
 dist/
 venv/
 __pycache__/
+__pypackages__/
 *.pyc
 *~
 Thumbs.db
