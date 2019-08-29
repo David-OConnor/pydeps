@@ -101,24 +101,16 @@ def reqs_from_installed(dep: Dependency) -> Optional[List[Requirement]]:
     """Check for dist-info and egg-info, and delegate to the appropriate
     sub function to find dependency info."""
     result = []
-    try:
-        with open(
-            f"{str(Path.cwd())}/deps_to_query/{dep.name}-{dep.version}.dist-info/METADATA"
-        ) as f:
-            for line in f.readlines():
-                m = re.match(r"^Requires-Dist:\s*(.*)$", line)
-                if m:
-                    data = m.groups()[0]
-
-                    result.append(Requirement(data=data, dependency=dep))
-
-
-    except FileNotFoundError:
-        # todo DRY!
-        # Try again, but capitalized
+    names_to_try = [
+        dep.name.replace("-", "_").capitalize(),
+        dep.name.replace("-", "_").lower(),
+        dep.name.replace("_", "-").capitalize(),
+        dep.name.replace("_", "-").lower(),
+    ]
+    for name in names_to_try:
         try:
             with open(
-                    f"{str(Path.cwd())}/deps_to_query/{dep.name.capitalize()}-{dep.version}.dist-info/METADATA"
+                f"{str(Path.cwd())}/deps_to_query/{name}-{dep.version}.dist-info/METADATA"
             ) as f:
                 for line in f.readlines():
                     m = re.match(r"^Requires-Dist:\s*(.*)$", line)
@@ -127,12 +119,7 @@ def reqs_from_installed(dep: Dependency) -> Optional[List[Requirement]]:
 
                         result.append(Requirement(data=data, dependency=dep))
         except FileNotFoundError:
-            print(f"Can't find dist-info for {dep.name}-{dep.version}")
-            return []  # This *may* mean the dependency cannot be found / doesn't exist.
-
-    # with open(f"deps_to_query/{name}-{version}.egg-info/requires.txt") as f:
-    #     for line in f.readlines():
-    #         result.append(Requirement.from_str(line))
+            continue
 
     return result
 
@@ -175,7 +162,7 @@ def cache_dep(name: str, version: str) -> None:
     if not dep.reqs_complete:
         dep.reqs_complete = True
         dep.save()
-    cleanup_downloaded()
+    # cleanup_downloaded()
 
 
 # todo: Until version handles modifiers
@@ -183,6 +170,7 @@ def cache_dep(name: str, version: str) -> None:
 def process_reqs(name: str, versions: List[str]) -> List[Dependency]:
     """Helper function to reduce repetition"""
     result_ = []
+    name = name.replace("_", "-").lower()
 
     for version in versions:
         # version = str(version) # todo put back once version handles modifiers
@@ -190,7 +178,7 @@ def process_reqs(name: str, versions: List[str]) -> List[Dependency]:
             # valid_names = [name.replace("-", "_"), name.replace("_", "-").lower()]
             # todo: May need a case check too, but can't chain _in and __iexact,
             # todo, and it appears that all db entries are lowercase
-            dep = Dependency.objects.get(name=name.replace("_", "-").lower(), version=version)
+            dep = Dependency.objects.get(name=name, version=version)
             if not dep.reqs_complete:
                 # Possible interruption between saving the dep, and adding the reqs.
                 print(
