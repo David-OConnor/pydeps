@@ -162,7 +162,7 @@ def cache_dep(name: str, version: str) -> None:
     if not dep.reqs_complete:
         dep.reqs_complete = True
         dep.save()
-    # cleanup_downloaded()
+    cleanup_downloaded()
 
 
 # todo: Until version handles modifiers
