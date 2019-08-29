@@ -155,6 +155,7 @@ def install_with_pip(dep: Dependency) -> None:
 def cache_dep(name: str, version: str) -> None:
     """Wrapper for subfns: Downloads a dep, pulls subdeps, cleans up
     downloaded files. Stores deps and reqs to database"""
+    name = name.replace("_", "-").lower()
     dep, created = Dependency.objects.get_or_create(name=name, version=version)
 
     install_with_pip(dep)
@@ -182,10 +183,14 @@ def cache_dep(name: str, version: str) -> None:
 def process_reqs(name: str, versions: List[str]) -> List[Dependency]:
     """Helper function to reduce repetition"""
     result_ = []
+
     for version in versions:
         # version = str(version) # todo put back once version handles modifiers
         try:
-            dep = Dependency.objects.get(name=name, version=version)
+            # valid_names = [name.replace("-", "_"), name.replace("_", "-").lower()]
+            # todo: May need a case check too, but can't chain _in and __iexact,
+            # todo, and it appears that all db entries are lowercase
+            dep = Dependency.objects.get(name=name.replace("_", "-").lower(), version=version)
             if not dep.reqs_complete:
                 # Possible interruption between saving the dep, and adding the reqs.
                 print(
@@ -207,7 +212,9 @@ def process_reqs(name: str, versions: List[str]) -> List[Dependency]:
                 # Possibly a conflict between multiple requests. If this happens,
                 # make sure we pull req info again. (?)
                 print("Integrity error; trying to get dep again.")
-                dep = Dependency.objects.get(name=name, version=version)
+                # There's inconsistent package name formatting across the ecosystem.
+                # valid_names = [name.replace("-", "_"), name.replace("_", "-")]
+                dep = Dependency.objects.get(name=name.replace("_", "-").lower(), version=version)
 
             if info["requires_dist"] is None:
                 # This may mean there are no dependencies, or Pypi is unable to properly
@@ -228,6 +235,10 @@ def process_reqs(name: str, versions: List[str]) -> List[Dependency]:
             dep.reqs_complete = True
             dep.save()
             print(f'Cached {name} = "{version}" ')
+            print("DEP", dep)
+        if name == "prompt-toolkit":
+            pass
+
         result_.append(dep)
     return result_
 
@@ -291,4 +302,5 @@ def multiple(request: Request):
         result.extend(process_reqs(name, versions))
 
     dep_serializer = DepSerializerWName(result, many=True)
+    # print(dep_serializer.data, "\n\n")
     return Response(dep_serializer.data)
