@@ -13,7 +13,5 @@ djangorestframework = "^3.10.1"
 gunicorn = "^19.7.1"
 dj-database-url = "^0.5.0"
 psycopg2-binary = "^2.8.3"
-black = "^19.3.0"
-
-rq
-wheel
+wheel = "^0.33.6"
+black = "^19.3.0b0"

@@ -82,6 +82,7 @@ class DepSerializer(serializers.ModelSerializer):
         fields = ("version", "requires_python", "requires_dist")
         depth = 1
 
+
 class DepSerializerWName(serializers.ModelSerializer):
     class Meta:
         model = Dependency
@@ -202,7 +203,9 @@ def process_reqs(name: str, versions: List[str]) -> List[Dependency]:
                 print("Integrity error; trying to get dep again.")
                 # There's inconsistent package name formatting across the ecosystem.
                 # valid_names = [name.replace("-", "_"), name.replace("_", "-")]
-                dep = Dependency.objects.get(name=name.replace("_", "-").lower(), version=version)
+                dep = Dependency.objects.get(
+                    name=name.replace("_", "-").lower(), version=version
+                )
 
             if info["requires_dist"] is None:
                 # This may mean there are no dependencies, or Pypi is unable to properly
