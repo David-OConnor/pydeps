@@ -170,10 +170,11 @@ def install_from_wheel(dep: Dependency) -> None:
                             continue
 
                         zip_ref.close()
+                    sys.stdout.flush()  # so we can output errors on heroku
                     break
             break
     if not found_wheel:
-        print("FAILED: PIP INSTALLING")
+        print_heroku("FAILED: PIP INSTALLING")
         install_with_pip(dep)
 
 
