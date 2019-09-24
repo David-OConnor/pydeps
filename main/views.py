@@ -144,6 +144,7 @@ def install_with_pip(dep: Dependency) -> None:
     # Version is exact.
     name_with_version = f"{dep.name}=={dep.version}"
     os.system(f"python3 -m pip install {name_with_version} --target deps_to_query")
+    sys.stdout.flush()
 
 
 def cache_dep(name: str, version: str) -> None:
