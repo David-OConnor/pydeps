@@ -89,6 +89,8 @@ LOCAL_DB = "postgres://david:test@localhost:5432/pydeps"
 
 DATABASES = {"default": dj_database_url.config(default=LOCAL_DB)}
 
+# from .private import HEROKU_DB_URL
+# DATABASES = {'default': dj_database_url.config(default=HEROKU_DB_URL)}
 
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators

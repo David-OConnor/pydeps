@@ -20,3 +20,4 @@ workspace.xml
 #Project-specific
 deps_to_query/
 .venv/
+pydeps/private.py

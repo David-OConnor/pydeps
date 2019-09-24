@@ -25,6 +25,12 @@ from .models import Dependency, Requirement
 # We keep versions as strings in this package for consistency with the database, file reads,
 # and rest endpoints.
 
+import sys  # todo todo temp
+
+def print_heroku(s: str):
+    print(s)
+    sys.stdout.flush()
+
 
 @dataclass
 @total_ordering
@@ -225,8 +231,8 @@ def process_reqs(name: str, versions: List[str]) -> List[Dependency]:
                         continue
             dep.reqs_complete = True
             dep.save()
-            print(f'Cached {name} = "{version}" ')
-            print("DEP", dep)
+            print_heroku(f'Cached {name} = "{version}" ')
+            print_heroku("DEP", dep)
         if name == "prompt-toolkit":
             pass
 
