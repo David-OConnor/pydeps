@@ -12,6 +12,7 @@ from rest_framework import serializers
 
 from pathlib import Path
 from shutil import rmtree
+import zipfile
 
 # from dataclasses import dataclass
 # from enum import Enum
@@ -140,6 +141,42 @@ def cleanup_downloaded() -> None:
             rmtree(path)
 
 
+def install_from_wheel(dep: Dependency) -> None:
+    """Try this first; if unable to find a wheel, use install_with_pip.
+    Doing this avoids installing sub-dependencies, and issues where we
+    can't install due to Heroku using an old version of pip incompatible
+    with manylinux2010, and problems building from source."""
+
+    # Version is exact.
+    data = requests.get(f"https://pypi.org/pypi/{dep.name}/json").json()
+    releases = data["releases"]
+    found_wheel = False
+
+    for rel_v, rel_data in releases.items():
+        if rel_v == dep.version:
+            # Pick the first wheel you find.
+            for rel in rel_data:
+                if rel["packagetype"] == "bdist_wheel":
+                    found_wheel = True
+                    downloaded_wheel = requests.get(rel["url"])
+                    archive_path = f"deps_to_query/{rel['filename']}"
+                    with open(archive_path, "wb") as f:
+                        f.write(downloaded_wheel.content)
+                        try:
+                            with zipfile.ZipFile(archive_path, 'r') as zip_ref:
+                                zip_ref.extractall("deps_to_query")
+                        except zipfile.BadZipFile:
+                            print("Bad zipfile on ", dep)
+                            continue
+
+                        zip_ref.close()
+                    break
+            break
+    if not found_wheel:
+        print("FAILED: PIP INSTALLING")
+        install_with_pip(dep)
+
+
 def install_with_pip(dep: Dependency) -> None:
     # Version is exact.
     name_with_version = f"{dep.name}=={dep.version}"
@@ -153,7 +190,7 @@ def cache_dep(name: str, version: str) -> None:
     name = name.replace("_", "-").lower()
     dep, created = Dependency.objects.get_or_create(name=name, version=version)
 
-    install_with_pip(dep)
+    install_from_wheel(dep)
 
     reqs = reqs_from_installed(dep)
     # if reqs is not None:
@@ -233,7 +270,7 @@ def process_reqs(name: str, versions: List[str]) -> List[Dependency]:
             dep.reqs_complete = True
             dep.save()
             print_heroku(f'Cached {name} = "{version}" ')
-            print_heroku("DEP", dep)
+            print_heroku(dep)
         if name == "prompt-toolkit":
             pass
 
