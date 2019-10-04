@@ -1,14 +1,11 @@
 # Python dependencies
-Provides two endpoints: 
-`https://pydeps.herokuapp.com/{packagename}/{version}`
-eg: `https://pydeps.herokuapp.com/matplotlib/3.0.0`
-
-`https://pydeps.herokuapp.com/{packagename}}`
-eg: `https://pydeps.herokuapp.com/matplotlib/`
-
-Lists dependencies, and version requirements for them. Downloads
-packages to determine their deps on the first query, then uses cached
-results for subsequent ones.
-
-Uses the `pypi warehouse` to pull avail versions, and to pull deps if listed.
-(May change if listed deps prove unreliable. Empty deps lists are always unreliable.)
+Example API calls: `https://pydeps.herokuapp.com/requests`, 
+`https://pydeps.herokuapp.com/requests/2.21.0`. 
+This pulls all top-level
+dependencies for the `requests` package, and the dependencies for version `2.21.0` respectively.
+There is also a `POST` API for pulling info on specified versions.
+ The first time this command is run
+for a package/version combo, it may be slow. Subsequent calls, by anyone,
+should be fast. This is due to having to download and install each package
+on the server to properly determine dependencies, due to unreliable information
+ on the `pypi warehouse`.

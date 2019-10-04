@@ -1,8 +1,22 @@
 [[package]]
-id = 13
-name = "toml"
-version = "0.10.0"
-source = "pypi+https://pypi.org/pypi/toml/0.10.0/json"
+id = 8
+name = "idna"
+version = "2.8.0"
+source = "pypi+https://pypi.org/pypi/idna/2.8.0/json"
+dependencies = []
+
+[[package]]
+id = 3
+name = "pytz"
+version = "2019.2.0"
+source = "pypi+https://pypi.org/pypi/pytz/2019.2.0/json"
+dependencies = []
+
+[[package]]
+id = 17
+name = "gunicorn"
+version = "19.9.0"
+source = "pypi+https://pypi.org/pypi/gunicorn/19.9.0/json"
 dependencies = []
 
 [[package]]
@@ -13,17 +27,31 @@ source = "pypi+https://pypi.org/pypi/sqlparse/0.3.0/json"
 dependencies = []
 
 [[package]]
-id = 7
-name = "urllib3"
-version = "1.25.5"
-source = "pypi+https://pypi.org/pypi/urllib3/1.25.5/json"
+id = 13
+name = "toml"
+version = "0.10.0"
+source = "pypi+https://pypi.org/pypi/toml/0.10.0/json"
 dependencies = []
 
 [[package]]
-id = 8
-name = "idna"
-version = "2.8.0"
-source = "pypi+https://pypi.org/pypi/idna/2.8.0/json"
+id = 18
+name = "psycopg2-binary"
+version = "2.8.3"
+source = "pypi+https://pypi.org/pypi/psycopg2-binary/2.8.3/json"
+dependencies = []
+
+[[package]]
+id = 15
+name = "attrs"
+version = "19.1.0"
+source = "pypi+https://pypi.org/pypi/attrs/19.1.0/json"
+dependencies = []
+
+[[package]]
+id = 10
+name = "djangorestframework"
+version = "3.10.3"
+source = "pypi+https://pypi.org/pypi/djangorestframework/3.10.3/json"
 dependencies = []
 
 [[package]]
@@ -34,10 +62,17 @@ source = "pypi+https://pypi.org/pypi/certifi/2019.9.11/json"
 dependencies = []
 
 [[package]]
-id = 17
-name = "gunicorn"
-version = "19.9.0"
-source = "pypi+https://pypi.org/pypi/gunicorn/19.9.0/json"
+id = 7
+name = "urllib3"
+version = "1.25.5"
+source = "pypi+https://pypi.org/pypi/urllib3/1.25.5/json"
+dependencies = []
+
+[[package]]
+id = 16
+name = "click"
+version = "7.0.0"
+source = "pypi+https://pypi.org/pypi/click/7.0.0/json"
 dependencies = []
 
 [[package]]
@@ -55,24 +90,17 @@ source = "pypi+https://pypi.org/pypi/requests/2.22.0/json"
 dependencies = ["urllib3 1.25.5 pypi+https://pypi.org/pypi/urllib3/1.25.5/json", "certifi 2019.9.11 pypi+https://pypi.org/pypi/certifi/2019.9.11/json", "idna 2.8.0 pypi+https://pypi.org/pypi/idna/2.8.0/json", "chardet 3.0.4 pypi+https://pypi.org/pypi/chardet/3.0.4/json"]
 
 [[package]]
+id = 14
+name = "appdirs"
+version = "1.4.3"
+source = "pypi+https://pypi.org/pypi/appdirs/1.4.3/json"
+dependencies = []
+
+[[package]]
 id = 9
 name = "chardet"
 version = "3.0.4"
 source = "pypi+https://pypi.org/pypi/chardet/3.0.4/json"
-dependencies = []
-
-[[package]]
-id = 10
-name = "djangorestframework"
-version = "3.10.3"
-source = "pypi+https://pypi.org/pypi/djangorestframework/3.10.3/json"
-dependencies = []
-
-[[package]]
-id = 3
-name = "pytz"
-version = "2019.2.0"
-source = "pypi+https://pypi.org/pypi/pytz/2019.2.0/json"
 dependencies = []
 
 [[package]]
@@ -83,10 +111,10 @@ source = "pypi+https://pypi.org/pypi/dj-database-url/0.5.0/json"
 dependencies = []
 
 [[package]]
-id = 16
-name = "click"
-version = "7.0.0"
-source = "pypi+https://pypi.org/pypi/click/7.0.0/json"
+id = 4
+name = "wheel"
+version = "0.33.6"
+source = "pypi+https://pypi.org/pypi/wheel/0.33.6/json"
 dependencies = []
 
 [[package]]
@@ -95,33 +123,5 @@ name = "black"
 version = "19.3.0b0"
 source = "pypi+https://pypi.org/pypi/black/19.3.0b0/json"
 dependencies = ["click 7.0.0 pypi+https://pypi.org/pypi/click/7.0.0/json", "toml 0.10.0 pypi+https://pypi.org/pypi/toml/0.10.0/json", "attrs 19.1.0 pypi+https://pypi.org/pypi/attrs/19.1.0/json", "appdirs 1.4.3 pypi+https://pypi.org/pypi/appdirs/1.4.3/json"]
-
-[[package]]
-id = 14
-name = "appdirs"
-version = "1.4.3"
-source = "pypi+https://pypi.org/pypi/appdirs/1.4.3/json"
-dependencies = []
-
-[[package]]
-id = 4
-name = "wheel"
-version = "0.33.6"
-source = "pypi+https://pypi.org/pypi/wheel/0.33.6/json"
-dependencies = []
-
-[[package]]
-id = 15
-name = "attrs"
-version = "19.1.0"
-source = "pypi+https://pypi.org/pypi/attrs/19.1.0/json"
-dependencies = []
-
-[[package]]
-id = 18
-name = "psycopg2-binary"
-version = "2.8.3"
-source = "pypi+https://pypi.org/pypi/psycopg2-binary/2.8.3/json"
-dependencies = []
 
 [metadata]

@@ -33,6 +33,4 @@ urlpatterns = [
     path("gte/<str:name>/<str:version>/", views.get_gte),
     path("lte/<str:name>/<str:version>/", views.get_lte),
     path("range/<str:name>/<str:min_vers>/<str:max_vers>/", views.get_range),
-
-
 ]

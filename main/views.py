@@ -28,6 +28,7 @@ from .models import Dependency, Requirement
 
 import sys  # todo todo temp
 
+
 def print_heroku(s: str):
     print(s)
     sys.stdout.flush()
@@ -60,25 +61,26 @@ class Version:
 
     @classmethod
     def from_str(cls: "Version", s: str) -> Optional["Version"]:
-        maj_only = re.match(r"^(\d{1,9})\.?$", s)
-        maj_minor = re.match(r"^(\d{1,9})\.(\d{1,9})\.?$", s)
-        maj_minor_patch = re.match(r"^(\d{1,9})\.(\d{1,9})\.(\d{1,9})\.?$", s)
+        # todo: Not as robust as the Rust version for handling modifiers etc.
+        maj_only = re.match(r"^(\d{1,9})\.?(.*)$", s)
+        maj_minor = re.match(r"^(\d{1,9})\.(\d{1,9})\.?(.*)$", s)
+        maj_minor_patch = re.match(r"^(\d{1,9})\.(\d{1,9})\.(\d{1,9})\.?(.*)$", s)
 
         if maj_minor_patch:
-            major, minor, patch = maj_minor_patch.groups()
-            return cls(int(major), int(minor), int(patch), "")
+            major, minor, patch, modifier = maj_minor_patch.groups()
+            return cls(int(major), int(minor), int(patch), modifier)
         if maj_minor:
-            major, minor = maj_minor.groups()
-            return cls(int(major), int(minor), 0, "")
+            major, minor, modifier = maj_minor.groups()
+            return cls(int(major), int(minor), 0, modifier)
         if maj_only:
-            major = maj_only.group()
-            return cls(int(major), 0, 0, "")
+            major, modifier = maj_only.groups()
+            return cls(int(major), 0, 0, modifier)
 
         # raise ValueError(f"Unable to parse Version from {s}")
         return None
 
     def __str__(self) -> str:
-        return f"{self.major}.{self.minor}.{self.patch}"
+        return f"{self.major}.{self.minor}.{self.patch}{self.modifier}"
 
 
 class DepSerializer(serializers.ModelSerializer):
@@ -163,7 +165,7 @@ def install_from_wheel(dep: Dependency) -> None:
                     with open(archive_path, "wb") as f:
                         f.write(downloaded_wheel.content)
                         try:
-                            with zipfile.ZipFile(archive_path, 'r') as zip_ref:
+                            with zipfile.ZipFile(archive_path, "r") as zip_ref:
                                 zip_ref.extractall("deps_to_query")
                         except zipfile.BadZipFile:
                             print("Bad zipfile on ", dep)
@@ -174,7 +176,7 @@ def install_from_wheel(dep: Dependency) -> None:
                     break
             break
     if not found_wheel:
-        print_heroku("FAILED: PIP INSTALLING")
+        print_heroku(f"Can't find a wheel; installing {dep} with Pip")
         install_with_pip(dep)
 
 
@@ -233,7 +235,6 @@ def process_reqs(name: str, versions: List[str]) -> List[Dependency]:
                 cache_dep(name, version)
                 result_.append(dep)
         except Dependency.DoesNotExist:
-
             data = requests.get(f"https://pypi.org/pypi/{name}/{version}/json").json()
             info = data["info"]
             dep = Dependency(
@@ -271,7 +272,6 @@ def process_reqs(name: str, versions: List[str]) -> List[Dependency]:
             dep.reqs_complete = True
             dep.save()
             print_heroku(f'Cached {name} = "{version}" ')
-            print_heroku(dep)
         if name == "prompt-toolkit":
             pass
 
@@ -328,6 +328,8 @@ def get_range(request: Request, name: str, min_vers: str, max_vers: str):
 
 @api_view(["POST"])
 def multiple(request: Request):
+    """This is the main API used by Pyflow; it can load arbitrary package/version combos
+    in one request, but requires passing the versions to query in the request."""
     result = []
 
     for name, versions in request.data["packages"].items():
