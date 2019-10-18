@@ -28,6 +28,13 @@ from .models import Dependency, Requirement
 
 import sys  # todo todo temp
 
+# Packages that don't have deps, and we don't want to try to download due to large size.
+# (Bearing in mind normally we have to check packages showing no deps on pypi, as it could
+# mean deps aren't specified).
+KNOWN_NO_DEPS = [
+    "numpy",
+]
+
 
 def print_heroku(s: str):
     print(s)
@@ -254,6 +261,12 @@ def process_reqs(name: str, versions: List[str]) -> List[Dependency]:
                 )
 
             if info["requires_dist"] is None:
+                if name in KNOWN_NO_DEPS:
+                    dep.reqs_complete = True
+                    dep.save()
+                    print(f"Skipping {name}; it's known to have no deps")
+                    continue
+
                 # This may mean there are no dependencies, or Pypi is unable to properly
                 # find them. Unfortunately, there's currently no way to tell the difference.
                 # todo: Even if not none, we may not be able to trust Pypi.
@@ -263,6 +276,7 @@ def process_reqs(name: str, versions: List[str]) -> List[Dependency]:
                 )
                 cache_dep(name, version)
             else:
+                # Use the info on Pypi without downloading/inspecting METADATA.
                 for req in info["requires_dist"]:
                     req2 = Requirement(data=req, dependency=dep)
                     try:
@@ -272,8 +286,6 @@ def process_reqs(name: str, versions: List[str]) -> List[Dependency]:
             dep.reqs_complete = True
             dep.save()
             print_heroku(f'Cached {name} = "{version}" ')
-        if name == "prompt-toolkit":
-            pass
 
         result_.append(dep)
     return result_
