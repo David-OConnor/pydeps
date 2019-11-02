@@ -33,6 +33,7 @@ import sys  # todo todo temp
 # mean deps aren't specified).
 KNOWN_NO_DEPS = [
     "numpy",
+    "cython",
 ]
 
 
