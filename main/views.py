@@ -34,6 +34,7 @@ import sys  # todo todo temp
 KNOWN_NO_DEPS = [
     "numpy",
     "cython",
+    "pyparsing",
 ]
 
 
